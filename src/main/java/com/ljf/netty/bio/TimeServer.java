@@ -20,13 +20,20 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
+ * 阻塞IO
  * @author lilinfeng
  * @version 1.0
  * @date 2014年2月14日
  */
 public class TimeServer {
-
+    private static int threadInitNumber;
+    private static synchronized int nextThreadNum() {
+        return threadInitNumber++;
+    }
     /**
+     * 采用BIO通信模型的服务端，通常由一个独立的Acceptor线程负责监听客户端的连接，
+     * 它接收到客户端连接请求之后为每个客户端创建一个新的线程进行链路处理，
+     * 处理完成之后，通过输出流返回应答给客户端，线程销毁
      * @param args
      * @throws IOException
      */
@@ -41,22 +48,18 @@ public class TimeServer {
             }
 
         }
-        ServerSocket server = null;
-        try {
-            server = new ServerSocket(port);
+        //try关闭流_使用try with resource 关闭流
+        try(ServerSocket server =new ServerSocket(port)) {
             System.out.println("The time server is start in port : " + port);
             Socket socket = null;
             while (true) {
+                //“监听客户端的连接，如果没有客户端接入，则主线程阻塞在accept操作，”
                 socket = server.accept();
-                System.out.println("听说程序阻塞在这里。。。。。。。。");
-                new Thread(new TimeServerHandler(socket)).start();
+                //“当有新的客户端接入的时候，执行”
+                new Thread(new TimeServerHandler(socket),"TimeServerThread-"+ nextThreadNum()).start();
             }
-        } finally {
-            if (server != null) {
-                System.out.println("The time server close");
-                server.close();
-                server = null;
-            }
+        }catch (IOException ex){
+            ex.printStackTrace();
         }
     }
 }
