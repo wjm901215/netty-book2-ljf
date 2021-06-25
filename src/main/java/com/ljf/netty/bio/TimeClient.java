@@ -23,6 +23,8 @@ import java.net.Socket;
 import java.util.stream.IntStream;
 
 /**
+ * 时间客户端
+ * 读和写操作都是同步阻塞的，阻塞的时间取决于对方I/O线程的处理速度和网络I/O的传输速度
  * @author lilinfeng
  * @version 1.0
  * @date 2014年2月14日

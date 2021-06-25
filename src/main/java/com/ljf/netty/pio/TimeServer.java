@@ -23,7 +23,7 @@ import com.ljf.netty.bio.TimeServerHandler;
 
 /**
  * 伪异步IO
- *
+ * 读和写操作都是同步阻塞的，阻塞的时间取决于对方I/O线程的处理速度和网络I/O的传输速度
  * @author lilinfeng
  * @version 1.0
  * @date 2014年2月14日
