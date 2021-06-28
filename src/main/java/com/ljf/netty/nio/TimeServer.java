@@ -18,6 +18,11 @@ package com.ljf.netty.nio;
 import java.io.IOException;
 
 /**
+ * NIO只需要创建1个线程
+ * NIO优势
+ * <p>1.客户端发起的连接操作是异步的，可以通过在多路复用器注册OP_CONNECT等待后续结果，不需要像之前的客户端那样被同步阻塞。</p>
+ * <p>2.SocketChannel的读写操作都是异步的，如果没有可读写的数据它不会同步等待，直接返回，这样I/O通信线程就可以处理其他的链路，不需要同步等待这个链路可用。</p>
+ * <p>3.线程模型的优化：由于JDK的Selector在Linux等主流操作系统上通过epoll实现，它没有连接句柄数的限制</p>
  * @author lilinfeng
  * @version 1.0
  * @date 2014年2月14日

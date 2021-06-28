@@ -1,12 +1,12 @@
 /*
  * Copyright 2013-2018 Lilinfeng.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,6 +23,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 /**
  * @author Administrator
@@ -43,8 +44,11 @@ public class TimeClientHandle implements Runnable {
         this.host = host == null ? "127.0.0.1" : host;
         this.port = port;
         try {
+            //创建Reactor线程，创建多路复用器
             selector = Selector.open();
+            //“打开SocketChannel，绑定客户端本地地址”
             socketChannel = SocketChannel.open();
+            //“设置SocketChannel为非阻塞模式”
             socketChannel.configureBlocking(false);
         } catch (IOException e) {
             e.printStackTrace();
@@ -54,7 +58,7 @@ public class TimeClientHandle implements Runnable {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Runnable#run()
      */
     @Override
@@ -106,6 +110,7 @@ public class TimeClientHandle implements Runnable {
             // 判断是否连接成功
             SocketChannel sc = (SocketChannel) key.channel();
             if (key.isConnectable()) {
+                //连接成功，注册读事件到多路复用器，然后发送消息给服务端
                 if (sc.finishConnect()) {
                     sc.register(selector, SelectionKey.OP_READ);
                     doWrite(sc);
@@ -148,7 +153,7 @@ public class TimeClientHandle implements Runnable {
         writeBuffer.put(req);
         writeBuffer.flip();
         sc.write(writeBuffer);
-            if (!writeBuffer.hasRemaining())
+        if (!writeBuffer.hasRemaining())
             System.out.println("Send order 2 server succeed.");
     }
 

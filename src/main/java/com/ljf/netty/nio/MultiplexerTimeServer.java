@@ -1,12 +1,12 @@
 /*
  * Copyright 2013-2018 Lilinfeng.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,10 +45,15 @@ public class MultiplexerTimeServer implements Runnable {
      */
     public MultiplexerTimeServer(int port) {
         try {
-            selector = Selector.open();
+            //“打开ServerSocketChannel用于监听客户端的连接，它是所有客户端连接的父管道”
             servChannel = ServerSocketChannel.open();
-            servChannel.configureBlocking(false);
+            //绑定监听端口,使用参数backlog来限制客户端连接的数量
             servChannel.socket().bind(new InetSocketAddress(port), 1024);
+            //“设置连接为非阻塞模式”
+            servChannel.configureBlocking(false);
+            //创建Reactor线程，创建多路复用器
+            selector = Selector.open();
+            //“将ServerSocketChannel注册到Reactor线程的多路复用器Selector上，监听ACCEPT事件”
             servChannel.register(selector, SelectionKey.OP_ACCEPT);
             System.out.println("The time server is start in port : " + port);
         } catch (IOException e) {
@@ -61,17 +66,20 @@ public class MultiplexerTimeServer implements Runnable {
         this.stop = true;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /**
+     * 多路复用器在线程run方法的无限循环体内轮询准备就绪的Key
+     *
      * @see java.lang.Runnable#run()
      */
     @Override
     public void run() {
+
         while (!stop) {
             try {
+                //休眠时间1S
                 selector.select(1000);
                 Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                //“当有处于就绪状态的Channel时，selector将返回就绪状态的Channel的SelectionKey集合”
                 Iterator<SelectionKey> it = selectedKeys.iterator();
                 SelectionKey key = null;
                 while (it.hasNext()) {
@@ -108,17 +116,20 @@ public class MultiplexerTimeServer implements Runnable {
             if (key.isAcceptable()) {
                 // Accept the new connection
                 ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
+                //“多路复用器监听到有新的客户端接入，处理新的接入请求，完成TCP三次握手，建立物理链路”
                 SocketChannel sc = ssc.accept();
+                //“设置客户端链路为非阻塞模式”
                 sc.configureBlocking(false);
                 // Add the new connection to the selector
                 sc.register(selector, SelectionKey.OP_READ);
             }
             if (key.isReadable()) {
-                // Read the data
+                // “异步读取客户端请求消息到缓冲区”
                 SocketChannel sc = (SocketChannel) key.channel();
                 ByteBuffer readBuffer = ByteBuffer.allocate(1024);
                 int readBytes = sc.read(readBuffer);
                 if (readBytes > 0) {
+                    //flip方法将Buffer从写模式切换到读模式。调用flip()方法会将position设回0，并将limit设置成之前position的值。
                     readBuffer.flip();
                     byte[] bytes = new byte[readBuffer.remaining()];
                     readBuffer.get(bytes);
@@ -140,6 +151,13 @@ public class MultiplexerTimeServer implements Runnable {
         }
     }
 
+    /**
+     * “POJO对象encode成ByteBuffer，调用SocketChannel的异步write接口，将消息异步发送给客户端”
+     *
+     * @param channel
+     * @param response
+     * @throws IOException
+     */
     private void doWrite(SocketChannel channel, String response)
             throws IOException {
         if (response != null && response.trim().length() > 0) {
