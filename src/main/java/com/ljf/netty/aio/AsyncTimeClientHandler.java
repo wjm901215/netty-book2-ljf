@@ -40,6 +40,7 @@ public class AsyncTimeClientHandler implements
         this.host = host;
         this.port = port;
         try {
+            //创建异步socket通道
             client = AsynchronousSocketChannel.open();
         } catch (IOException e) {
             e.printStackTrace();
@@ -50,8 +51,10 @@ public class AsyncTimeClientHandler implements
     public void run() {
 
         latch = new CountDownLatch(1);
+        //A attachment，CompletionHandler，两个参数都使用AsyncTimeClientHandler类本身，因为它实现了CompletionHandler接口”
         client.connect(new InetSocketAddress(host, port), this, this);
         try {
+            //“防止异步操作没有执行完成线程就退出”
             latch.await();
         } catch (InterruptedException e1) {
             e1.printStackTrace();
@@ -69,14 +72,19 @@ public class AsyncTimeClientHandler implements
         ByteBuffer writeBuffer = ByteBuffer.allocate(req.length);
         writeBuffer.put(req);
         writeBuffer.flip();
+        //异步写
         client.write(writeBuffer, writeBuffer,
                 new CompletionHandler<Integer, ByteBuffer>() {
                     @Override
                     public void completed(Integer result, ByteBuffer buffer) {
                         if (buffer.hasRemaining()) {
+                            //“如果发送缓冲区中仍有尚未发送的字节，将继续异步发送”
+                            //“如果已经发送完成，则执行异步读取操作”
                             client.write(buffer, buffer, this);
                         } else {
+                            //执行异步读取操作
                             ByteBuffer readBuffer = ByteBuffer.allocate(1024);
+                            //“read操作是异步的，所以我们通过内部匿名类实现CompletionHandle
                             client.read(
                                     readBuffer,
                                     readBuffer,
